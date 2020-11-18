@@ -1,54 +1,55 @@
-# Bash promt line customization                                                                                         
-                                                                                                                        
-# get current branch in git repo                                                                                        
-function parse_git_branch() {                                                                                           
-    BRANCH=`git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`                                            
-    if [ ! "${BRANCH}" == "" ]                                                                                          
-    then                                                                                                                
-        STAT=`parse_git_dirty`                                                                                          
-        echo -e "$Cyan(${BRANCH}) ${STAT}"                                                                              
-    else                                                                                                                
-        echo ""                                                                                                         
-    fi                                                                                                                  
-}                                                                                                                       
-                                                                                                                        
-# get current status of git repo                                                                                        
-function parse_git_dirty                                                                                                
-{                                                                                                                       
-    status=`git status 2>&1 | tee`                                                                                      
-    staged=`git diff --name-only --staged 2> /dev/null | wc -l | xargs echo`                                            
-    modified=`git diff --name-only 2> /dev/null | wc -l | xargs echo`                                                   
-    untracked=`git ls-files -o --exclude-standard 2> /dev/null | wc -l | xargs echo`                                    
-    newfile=`echo -n "${status}" 2> /dev/null | grep "new file:" &> /dev/null; echo "$?"`                               
-    deleted=`echo -n "${status}" 2> /dev/null | grep "deleted:" &> /dev/null; echo "$?"`                                
-    bits=''                                                                                                             
-    if [ "${staged}" != "0" ]; then                                                                                     
-        bits+="${Green}\u272d ${staged}"                                                                                
-    fi                                                                                                                  
-    if [ "${modified}" != "0" ]; then                                                                                   
-        bits+=" ${Red}\u25cf ${modified}"                                                                               
-    fi                                                                                                                  
-    if [ "${newfile}" == "0" ]; then                                                                                    
-        bits="+${bits}"                                                                                                 
-    fi                                                                                                                  
-    if [ "${untracked}" != "0" ]; then                                                                                  
-        bits+=" ${Magenta}\u2729 ${untracked}"                                                                          
-    fi                                                                                                                  
-    if [ "${deleted}" == "0" ]; then                                                                                    
-        bits="x${bits}"                                                                                                 
-    fi                                                                                                                  
-                                                                                                                        
-    echo "${bits}"                                                                                                      
-}                                                                                                                       
-                                                                                                                        
-function nonzero_return()                                                                                               
-{                                                                                                                       
-   RETVAL=$?                                                                                                           
-   if [ $RETVAL -eq 0 ]; then                                                                                          
-       	echo -e "${Green}[+]"                                                                                           
-    else                                                                                                                
-        echo -e "${Red}[-]"                                                                                             
-    fi                                                                                                                  
-}                                                                                                                       
-                                                                                                                         
-export PS1="${White}[\t]: ${LightYellow}\w $   \`nonzero_return\`          $White\`parse_git_branch\`$White\n> "        
+# Bash promt line customization
+
+# get current branch in git repo
+function parse_git_branch() {
+    BRANCH=`git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
+    if [ ! "${BRANCH}" == "" ]
+    then
+        STAT=`parse_git_dirty`
+        echo -e "$Cyan[${BRANCH}] ${STAT}"
+    else
+        echo ""
+    fi
+}
+
+# get current status of git repo
+function parse_git_dirty
+{
+    status=`git status 2>&1 | tee`
+    staged=`git diff --name-only --staged 2> /dev/null | wc -l | xargs echo`
+    modified=`git diff --name-only 2> /dev/null | wc -l | xargs echo`
+    untracked=`git ls-files -o --exclude-standard 2> /dev/null | wc -l | xargs echo`
+    newfile=`echo -n "${status}" 2> /dev/null | grep "new file:" &> /dev/null; echo "$?"`
+    deleted=`echo -n "${status}" 2> /dev/null | grep "deleted:" &> /dev/null; echo "$?"`
+    bits=''
+    if [ "${staged}" != "0" ]; then
+        bits+="${Green}\u272d ${staged}"
+    fi
+    if [ "${modified}" != "0" ]; then
+        bits+=" ${Red}\u25cf ${modified}"
+    fi
+#    if [ "${newfile}" == "0" ]; then
+#        bits="+${bits}"
+#    fi
+    if [ "${untracked}" != "0" ]; then
+        bits+=" ${Magenta}\u2729 ${untracked}"
+    fi
+    if [ "${deleted}" == "0" ]; then
+        bits="x${bits}"
+    fi
+
+    echo "${bits}"
+}
+
+function nonzero_return()
+{
+   RETVAL=$?
+   if [ $RETVAL -eq 0 ]; then
+       	echo -e "${Green}[+]"
+    else
+        echo -e "${Red}[-]"
+    fi
+}
+
+export PS1="${White}[\t]: ${LightYellow}\w $   \`nonzero_return\`          $White\`parse_git_branch\`${White}\n"
+export PS1+="> "
