@@ -6,50 +6,66 @@ function parse_git_branch() {
     if [ ! "${BRANCH}" == "" ]
     then
         STAT=`parse_git_dirty`
-        echo -e "$Cyan[${BRANCH}] ${STAT}"
+        echo -e "${STAT}"
     else
         echo ""
     fi
 }
 
+# Define colors for Rose Pine theme
+reset_color='\[\e[0m\]'
+dark_red='\[\e[38;2;191;97;106m\]'
+dark_blue='\[\e[38;2;139;157;195m\]'
+dark_green='\[\e[38;2;163;190;140m\]'
+dark_purple='\[\e[38;2;180;142;173m\]'
+light_red='\[\e[38;2;255;121;140m\]'
+light_blue='\[\e[38;2;173;219;214m\]'
+light_green='\[\e[38;2;200;212;140m\]'
+light_purple='\[\e[38;2;232;213;237m\]'
+bold='\[\e[1m\]'
+
+# Function to get the current Git branch
+git_branch() {
+  local branch_name
+  branch_name=$(git symbolic-ref --short HEAD 2>/dev/null)
+  if [ -n "$branch_name" ]; then
+    echo "($branch_name)"
+  fi
+}
 # get current status of git repo
 function parse_git_dirty
 {
-    status=`git status 2>&1 | tee`
     staged=`git diff --name-only --staged 2> /dev/null | wc -l | xargs echo`
-    modified=`git diff --name-only 2> /dev/null | wc -l | xargs echo`
-    untracked=`git ls-files -o --exclude-standard 2> /dev/null | wc -l | xargs echo`
-    newfile=`echo -n "${status}" 2> /dev/null | grep "new file:" &> /dev/null; echo "$?"`
-    deleted=`echo -n "${status}" 2> /dev/null | grep "deleted:" &> /dev/null; echo "$?"`
+    modified=`git ls-files --modified 2> /dev/null | wc -l | xargs echo`
+    untracked=`git ls-files --others --exclude-standard 2> /dev/null | wc -l | xargs echo`
+    deleted=`git ls-files --deleted 2> /dev/null | wc -l | xargs echo`
     bits=''
     if [ "${staged}" != "0" ]; then
-        bits+="${Green}\u272d ${staged}"
+        bits+="\[${Green}\]\u229e ${staged} "
     fi
     if [ "${modified}" != "0" ]; then
-        bits+=" ${Red}\u25cf ${modified}"
+        bits+="\[${Red}\]\u25a3 ${modified} "
     fi
-#    if [ "${newfile}" == "0" ]; then
-#        bits="+${bits}"
-#    fi
     if [ "${untracked}" != "0" ]; then
-        bits+=" ${Magenta}\u2729 ${untracked}"
-    fi
-    if [ "${deleted}" == "0" ]; then
-        bits="x${bits}"
+        bits+="\[${Magenta}\]\u25a1 ${untracked}"
     fi
 
-    echo "${bits}"
+    echo -n "${bits}"
 }
 
-function nonzero_return()
-{
-   RETVAL=$?
-   if [ $RETVAL -eq 0 ]; then
-       	echo -e "${Green}[+]"
+function __prompt_command() {
+    local EXIT="$?"                # This needs to be first
+    local git_info=`parse_git_branch`
+    PS1=""
+
+    if [ $EXIT -eq 0 ]; then
+        RETURN_STATUS="${Green}[+]"
     else
-        echo -e "${Red}[-]"
+        RETURN_STATUS="${Red}[-]"
     fi
+
+    PS1="$light_purple\W $dark_blue$(git_branch) ${git_info} $dark_purple\$ $reset_color"
 }
 
-export PS1="${White}[\t]: ${LightYellow}\w $   \`nonzero_return\`          $White\`parse_git_branch\`${White}\n"
-export PS1+="> "
+export PROMPT_COMMAND=__prompt_command    # Function to generate PS1 after CMDs
+
